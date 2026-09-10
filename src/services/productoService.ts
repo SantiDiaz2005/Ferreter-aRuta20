@@ -4,7 +4,7 @@ import type { Producto } from '../types';
 
 export const productoService = {
   
-  // 1. LEER EN TANDAS (Para superar el límite de 1000 al mostrar en pantalla)
+  // 1. LEER EN TANDAS
   async listarPorProveedor(proveedorId: string): Promise<Producto[]> {
     let todosLosProductos: Producto[] = [];
     let limite = 1000;
@@ -44,32 +44,32 @@ export const productoService = {
     if (error) throw error;
   },
 
-  // 2. GUARDAR EN TANDAS (Para que el Excel no colapse al subir)
+  // 2. GUARDAR EN TANDAS (Con filtro anti-duplicados del Excel)
   async sincronizarCatalogo(proveedorId: string, productosExcel: any[]): Promise<void> {
     const existentes = await this.listarPorProveedor(proveedorId);
     const mapaExistentes = new Map(existentes.map(p => [p.codigo_interno, p]));
 
-    const paraInsertar: any[] = [];
-    const paraActualizar: any[] = [];
+    // Usamos 'Map' en lugar de 'Array' para que, si un producto viene repetido en el Excel, 
+    // se pise a sí mismo y solo lo mandemos UNA vez a la base de datos.
+    const paraInsertarMap = new Map();
+    const paraActualizarMap = new Map();
 
     for (const prod of productosExcel) {
       const existe = mapaExistentes.get(prod.codigo_interno);
       
       if (existe) {
-        // JUGADA MAESTRA: Actualizamos si cambió el costo, ¡O si le faltaba el código de proveedor!
         if (existe.costo !== prod.costo || existe.codigo_proveedor !== prod.codigo_proveedor) {
-           paraActualizar.push({
-             ...existe, // <-- ¡ESTA ES LA MAGIA! Copia todo lo que ya tenía para que Supabase no tire error
+           paraActualizarMap.set(existe.id, {
+             ...existe, 
              costo: prod.costo,
              precio_venta: prod.costo * (existe.ganancia || 1.5),
              codigo_proveedor: prod.codigo_proveedor
            });
         }
       } else {
-        // Si es un producto nuevo, lo inserta con su código de proveedor
-        paraInsertar.push({
+        paraInsertarMap.set(prod.codigo_interno, {
           codigo_interno: prod.codigo_interno,
-          codigo_proveedor: prod.codigo_proveedor, // <-- Agregado para inserciones nuevas
+          codigo_proveedor: prod.codigo_proveedor,
           descripcion: prod.descripcion,
           costo: prod.costo,
           ganancia: 1.5, 
@@ -79,16 +79,19 @@ export const productoService = {
       }
     }
 
-    // Dividimos en grupos de 1000 para insertar
+    // Convertimos los Mapas limpios y sin repetidos devuelta a listas normales
+    const paraInsertar = Array.from(paraInsertarMap.values());
+    const paraActualizar = Array.from(paraActualizarMap.values());
+
+    // Insertamos
     const TAMANO_TANDA = 1000;
-    
     for (let i = 0; i < paraInsertar.length; i += TAMANO_TANDA) {
       const tanda = paraInsertar.slice(i, i + TAMANO_TANDA);
       const { error } = await supabase.from('productos').insert(tanda);
       if (error) throw error;
     }
 
-    // Dividimos en grupos de 1000 para actualizar
+    // Actualizamos
     for (let i = 0; i < paraActualizar.length; i += TAMANO_TANDA) {
       const tanda = paraActualizar.slice(i, i + TAMANO_TANDA);
       const { error } = await supabase.from('productos').upsert(tanda);
