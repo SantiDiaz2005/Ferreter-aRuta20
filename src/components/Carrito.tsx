@@ -29,12 +29,11 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 14, 36);
 
     const datosTabla = items.map(item => [
-      item.codigo_interno,
-      item.descripcion,
-      item.cantidad.toString(),
-      `$${item.costo.toFixed(2)}`,
-      `$${(item.costo * item.cantidad).toFixed(2)}`
-    ]);
+  item.codigo_proveedor || item.codigo_interno, // <-- Modificar esta línea
+  item.descripcion,
+  item.cantidad,
+  // ... (el resto de tus columnas quedan igual)
+]);
 
     autoTable(doc, {
       startY: 45,

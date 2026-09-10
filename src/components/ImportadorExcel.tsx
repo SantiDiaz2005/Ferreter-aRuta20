@@ -38,17 +38,21 @@ export const ImportadorExcel = ({ proveedor, onImportacionExitosa }: ImportadorP
         for (let i = 1; i < filas.length; i++) {
           const fila = filas[i];
           
-          // Mapeo exacto de las columnas de tu Excel
-          const codigo = fila[0] || fila[1]; // A o B (Código Interno o Código Prov)
-          const descripcion = fila[2];       // C (Descripción)
-          const costo = fila[8];             // I (Costo Final Neto)
-          const proveedorExcel = fila[11];   // L (Nombre del Proveedor)
+          // Mapeo exacto de las columnas de tu Excel SEPARADAS
+          const codigoInterno = fila[0];   // Columna A (Código Ferretería)
+          const codigoProveedor = fila[1]; // Columna B (Código del Proveedor)
+          const descripcion = fila[2];     // Columna C (Descripción)
+          const costo = fila[8];           // Columna I (Costo Final Neto)
+          const proveedorExcel = fila[11]; // Columna L (Nombre del Proveedor)
 
           // Filtramos: Si la columna L tiene el nombre de nuestro proveedor actual, lo guardamos
           if (proveedorExcel && String(proveedorExcel).toUpperCase().includes(proveedor.nombre.toUpperCase())) {
-            if (codigo && descripcion && typeof costo === 'number') {
+            if ((codigoInterno || codigoProveedor) && descripcion && typeof costo === 'number') {
               productosDelExcel.push({
-                codigo_interno: String(codigo).trim(),
+                // Si no hay código interno, guardamos el del proveedor para que no dé error en la BD
+                codigo_interno: codigoInterno ? String(codigoInterno).trim() : String(codigoProveedor).trim(),
+                // Guardamos el código exacto del proveedor en su nueva columna
+                codigo_proveedor: codigoProveedor ? String(codigoProveedor).trim() : null,
                 descripcion: String(descripcion).trim(),
                 costo: costo
               });
@@ -62,7 +66,7 @@ export const ImportadorExcel = ({ proveedor, onImportacionExitosa }: ImportadorP
         }
 
         await productoService.sincronizarCatalogo(proveedor.id, productosDelExcel);
-        alert(`✅ ¡Éxito! Se actualizaron ${productosDelExcel.length} productos de ${proveedor.nombre} usando la Columna I.`);
+        alert(`✅ ¡Éxito! Se actualizaron ${productosDelExcel.length} productos de ${proveedor.nombre}.`);
         onImportacionExitosa(); 
         
       } catch (error) {
@@ -80,7 +84,7 @@ export const ImportadorExcel = ({ proveedor, onImportacionExitosa }: ImportadorP
     <div className="bg-slate-800/80 p-5 rounded-xl flex items-center justify-between mb-6 border border-slate-700 shadow-md">
       <div>
         <h4 className="text-base font-bold text-white flex items-center gap-2">
-          {cargando ? '⏳ Leyendo Columna I...' : '📄 Actualizar Lista (Excel)'}
+          {cargando ? '⏳ Leyendo Excel...' : '📄 Actualizar Lista (Excel)'}
         </h4>
         <p className="text-xs text-slate-400 mt-1">
           Subí el Excel completo. El sistema filtrará a {proveedor.nombre} automáticamente.

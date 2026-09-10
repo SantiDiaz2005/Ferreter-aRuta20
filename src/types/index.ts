@@ -10,6 +10,7 @@ export interface Proveedor {
 export interface Producto {
   id: string;
   codigo_interno: string;
+  codigo_proveedor?: string; // <-- Acá sumamos la nueva columna
   descripcion: string;
   costo: number;
   ganancia: number;

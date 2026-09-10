@@ -65,9 +65,11 @@ export const TablaProductos = ({ proveedor, onAgregarAlCarrito }: TablaProductos
     }
   };
 
+  // ACÁ MEJORAMOS EL BUSCADOR PARA QUE LEA AMBOS CÓDIGOS
   const productosFiltrados = productos.filter((prod) =>
     prod.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
-    prod.codigo_interno.toLowerCase().includes(busqueda.toLowerCase())
+    prod.codigo_interno.toLowerCase().includes(busqueda.toLowerCase()) ||
+    (prod.codigo_proveedor && prod.codigo_proveedor.toLowerCase().includes(busqueda.toLowerCase()))
   );
 
   if (cargando) return <div className="text-slate-400 mt-8 text-center animate-pulse text-sm">Cargando catálogo...</div>;
@@ -117,7 +119,6 @@ export const TablaProductos = ({ proveedor, onAgregarAlCarrito }: TablaProductos
 
       {productos.length > 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden shadow-lg">
-          {/* ACHICAMOS LA TABLA: text-xs y paddings reducidos */}
           <table className="w-full text-left text-xs text-slate-300">
             <thead className="bg-slate-800/80 uppercase text-slate-400 border-b border-slate-800 text-[10px]">
               <tr>
@@ -132,7 +133,8 @@ export const TablaProductos = ({ proveedor, onAgregarAlCarrito }: TablaProductos
             <tbody className="divide-y divide-slate-800/50">
               {productosFiltrados.map((prod) => (
                 <tr key={prod.id} className="hover:bg-slate-800/40">
-                  <td className="px-4 py-1.5 font-mono text-slate-400">{prod.codigo_interno}</td>
+                  {/* ACÁ HACEMOS QUE MUESTRE EL CÓDIGO DEL PROVEEDOR, O EL INTERNO SI ESTÁ VACÍO */}
+                  <td className="px-4 py-1.5 font-mono text-slate-400">{prod.codigo_proveedor || prod.codigo_interno}</td>
                   <td className="px-4 py-1.5 font-medium text-slate-200 truncate max-w-[250px]" title={prod.descripcion}>{prod.descripcion}</td>
                   <td className="px-4 py-1.5 text-slate-400">${prod.costo.toFixed(2)}</td>
                   <td className="px-4 py-1.5">

@@ -44,7 +44,7 @@ export const productoService = {
     if (error) throw error;
   },
 
-  // 2. GUARDAR EN TANDAS (Para que el Excel de 7000 productos no colapse al subir)
+  // 2. GUARDAR EN TANDAS (Para que el Excel no colapse al subir)
   async sincronizarCatalogo(proveedorId: string, productosExcel: any[]): Promise<void> {
     const existentes = await this.listarPorProveedor(proveedorId);
     const mapaExistentes = new Map(existentes.map(p => [p.codigo_interno, p]));
@@ -56,16 +56,20 @@ export const productoService = {
       const existe = mapaExistentes.get(prod.codigo_interno);
       
       if (existe) {
-        if (existe.costo !== prod.costo) {
+        // JUGADA MAESTRA: Actualizamos si cambió el costo, ¡O si le faltaba el código de proveedor!
+        if (existe.costo !== prod.costo || existe.codigo_proveedor !== prod.codigo_proveedor) {
            paraActualizar.push({
              id: existe.id,
              costo: prod.costo,
-             precio_venta: prod.costo * (existe.ganancia || 1.5) 
+             precio_venta: prod.costo * (existe.ganancia || 1.5),
+             codigo_proveedor: prod.codigo_proveedor // <-- Actualiza el código vacío
            });
         }
       } else {
+        // Si es un producto nuevo, lo inserta con su código de proveedor
         paraInsertar.push({
           codigo_interno: prod.codigo_interno,
+          codigo_proveedor: prod.codigo_proveedor, // <-- Agregado para inserciones nuevas
           descripcion: prod.descripcion,
           costo: prod.costo,
           ganancia: 1.5, 

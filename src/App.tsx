@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TablaProductos } from './components/TablaProductos';
 import { Carrito } from './components/Carrito';
@@ -7,8 +7,24 @@ import type { Proveedor, Producto, ItemCarrito } from './types';
 function App() {
   const [proveedorActual, setProveedorActual] = useState<Proveedor | null>(null);
   
-  // LA MAGIA: Memoria de carritos múltiples. Guarda listas separadas por el ID del proveedor.
-  const [carritos, setCarritos] = useState<Record<string, ItemCarrito[]>>({});
+  // LA MAGIA 1: Al abrir la página, busca si quedaron pedidos guardados de antes en el disco del navegador
+  const [carritos, setCarritos] = useState<Record<string, ItemCarrito[]>>(() => {
+    const memoriaGuardada = localStorage.getItem('carritos_ruta20');
+    if (memoriaGuardada) {
+      try {
+        return JSON.parse(memoriaGuardada);
+      } catch (error) {
+        console.error("Error leyendo la memoria", error);
+        return {};
+      }
+    }
+    return {};
+  });
+
+  // LA MAGIA 2: El vigilante. Cada vez que el changuito cambia, lo guarda instantáneamente
+  useEffect(() => {
+    localStorage.setItem('carritos_ruta20', JSON.stringify(carritos));
+  }, [carritos]);
 
   // Función para agregar o sumar cantidad a un producto en el carrito actual
   const handleAgregarAlCarrito = (producto: Producto) => {
@@ -43,6 +59,7 @@ function App() {
       };
     });
   };
+
   // Función para restar cantidad a un producto desde el carrito
   const handleRestarDelCarrito = (productoId: string) => {
     if (!proveedorActual) return;
