@@ -59,10 +59,10 @@ export const productoService = {
         // JUGADA MAESTRA: Actualizamos si cambió el costo, ¡O si le faltaba el código de proveedor!
         if (existe.costo !== prod.costo || existe.codigo_proveedor !== prod.codigo_proveedor) {
            paraActualizar.push({
-             id: existe.id,
+             ...existe, // <-- ¡ESTA ES LA MAGIA! Copia todo lo que ya tenía para que Supabase no tire error
              costo: prod.costo,
              precio_venta: prod.costo * (existe.ganancia || 1.5),
-             codigo_proveedor: prod.codigo_proveedor // <-- Actualiza el código vacío
+             codigo_proveedor: prod.codigo_proveedor
            });
         }
       } else {
