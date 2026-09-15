@@ -9,17 +9,19 @@ interface CarritoProps {
   onRemoverItem: (productoId: string) => void;
   onSumarItem: (producto: Producto) => void;
   onRestarItem: (productoId: string) => void;
-  onVaciarCarrito: () => void; // <-- ¡NUEVO! Prop para el botón del tacho de basura
+  onVaciarCarrito: () => void;
 }
 
 export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestarItem, onVaciarCarrito }: CarritoProps) => {
   const total = items.reduce((sum, item) => sum + (item.costo * item.cantidad), 0);
 
-  const generarPDFyWhatsApp = () => {
+  const generarPDFyWhatsApp = async () => {
     if (!proveedor.telefono) {
       alert(`No hay un número de teléfono cargado para ${proveedor.nombre}`);
       return;
     }
+    
+    // 1. Generamos el PDF
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.setTextColor(15, 23, 42); 
@@ -50,14 +52,16 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     const nombreArchivo = `Pedido_${proveedor.nombre.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
     doc.save(nombreArchivo);
 
+    // 2. Preparamos el mensaje
     const mensaje = `Hola ${proveedor.nombre}, te envío adjunto en PDF el pedido de stock desde Ferretería Ruta 20. ¡Muchas gracias!`;
     
-    // 🔥 LA MAGIA DE WHATSAPP: Enlace directo a la versión Web
-    const url = `https://web.whatsapp.com/send?phone=${proveedor.telefono}&text=${encodeURIComponent(mensaje)}`;
-    
-    setTimeout(() => {
-      window.open(url, '_blank');
-    }, 500);
+    // 3. LA NUEVA MAGIA: Copiamos al portapapeles en vez de abrir pestañas nuevas
+    try {
+      await navigator.clipboard.writeText(mensaje);
+      alert(`✅ ¡Listo!\n\n1. El PDF se descargó en tu compu.\n2. El texto del mensaje se copió automáticamente.\n\nAndá a la pestaña de WhatsApp que ya tenés abierta, buscá a ${proveedor.nombre}, tocá Ctrl+V (o Pegar) y adjuntá el PDF.`);
+    } catch (err) {
+      alert(`✅ PDF descargado.\n\nPor favor, escribile a ${proveedor.nombre} por el WhatsApp que tenés abierto y pasale el archivo.`);
+    }
   };
 
   return (
@@ -66,7 +70,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
       {/* HEADER DEL CARRITO */}
       <div className="p-4 border-b border-slate-700 bg-slate-900 flex justify-between items-center">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
-          {/* Ícono Changuito SVG */}
           <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
           </svg>
@@ -101,7 +104,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                 className="absolute top-1.5 right-1.5 text-slate-400 hover:text-red-400 w-5 h-5 flex items-center justify-center rounded transition-colors"
                 title="Eliminar ítem"
               >
-                {/* Ícono Cruz SVG */}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -154,11 +156,10 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
               : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
           }`}
         >
-          {/* Ícono PDF SVG */}
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
-          PDF y Enviar
+          Descargar PDF y Copiar Mensaje
         </button>
       </div>
     </aside>
