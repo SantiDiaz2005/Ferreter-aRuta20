@@ -24,7 +24,6 @@ export const ImportadorExcel = ({ proveedor, onImportacionExitosa }: ImportadorP
         const arrayBuffer = evento.target?.result;
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         
-        // Ahora vamos directo a la hoja maestra "PRODUCTOS"
         const hoja = workbook.Sheets['PRODUCTOS'];
         if (!hoja) {
           alert('❌ No se encontró la pestaña maestra llamada "PRODUCTOS" en este Excel.');
@@ -38,23 +37,28 @@ export const ImportadorExcel = ({ proveedor, onImportacionExitosa }: ImportadorP
         for (let i = 1; i < filas.length; i++) {
           const fila = filas[i];
           
-          // Mapeo exacto de las columnas de tu Excel SEPARADAS
-          const codigoInterno = fila[0];   // Columna A (Código Ferretería)
-          const codigoProveedor = fila[1]; // Columna B (Código del Proveedor)
-          const descripcion = fila[2];     // Columna C (Descripción)
-          const costo = fila[8];           // Columna I (Costo Final Neto)
-          const proveedorExcel = fila[11]; // Columna L (Nombre del Proveedor)
+          const codigoInterno = fila[0];   // Columna A
+          const codigoProveedor = fila[1]; // Columna B
+          const descripcion = fila[2];     // Columna C
+          const costo = fila[8];           // Columna I
+          const proveedorExcel = fila[11]; // Columna L
 
-          // Filtramos: Si la columna L tiene el nombre de nuestro proveedor actual, lo guardamos
-          if (proveedorExcel && String(proveedorExcel).toUpperCase().includes(proveedor.nombre.toUpperCase())) {
-            if ((codigoInterno || codigoProveedor) && descripcion && typeof costo === 'number') {
+          // 1. Limpieza total de los nombres (forzamos string, mayúsculas y quitamos espacios)
+          const nombreProvExcel = String(proveedorExcel || '').toUpperCase().trim();
+          const nombreProvBD = proveedor.nombre.toUpperCase().trim();
+
+          // 2. Convertimos el costo a número sí o sí (por si Excel lo manda como texto)
+          const costoNumerico = Number(costo);
+
+          // Filtramos
+          if (nombreProvExcel.includes(nombreProvBD)) {
+            // 3. El cambio clave: quitamos el "typeof" y chequeamos que sea un número válido (!isNaN)
+            if ((codigoInterno || codigoProveedor) && descripcion && !isNaN(costoNumerico)) {
               productosDelExcel.push({
-                // Si no hay código interno, guardamos el del proveedor para que no dé error en la BD
                 codigo_interno: codigoInterno ? String(codigoInterno).trim() : String(codigoProveedor).trim(),
-                // Guardamos el código exacto del proveedor en su nueva columna
                 codigo_proveedor: codigoProveedor ? String(codigoProveedor).trim() : null,
                 descripcion: String(descripcion).trim(),
-                costo: costo
+                costo: costoNumerico
               });
             }
           }
