@@ -1,6 +1,7 @@
 // src/components/Carrito.tsx
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import type { Proveedor, ItemCarrito, Producto } from '../types';
 
 interface CarritoProps {
@@ -15,13 +16,23 @@ interface CarritoProps {
 export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestarItem, onVaciarCarrito }: CarritoProps) => {
   const total = items.reduce((sum, item) => sum + (item.costo * item.cantidad), 0);
 
-  const generarPDFyWhatsApp = async () => {
+  // Función unificada para copiar al portapapeles
+  const copiarMensajeYAlertar = async (formato: 'PDF' | 'Excel') => {
+    const mensaje = `Hola ${proveedor.nombre}, te envío adjunto en ${formato} el pedido de stock desde Ferretería Ruta 20. ¡Muchas gracias!`;
+    try {
+      await navigator.clipboard.writeText(mensaje);
+      alert(`✅ ¡Listo!\n\n1. El ${formato} se descargó en tu compu.\n2. El texto del mensaje se copió automáticamente.\n\nAndá a la pestaña de WhatsApp que ya tenés abierta, buscá a ${proveedor.nombre}, tocá Ctrl+V (o Pegar) y adjuntá el archivo.`);
+    } catch (err) {
+      alert(`✅ ${formato} descargado.\n\nPor favor, escribile a ${proveedor.nombre} por el WhatsApp que tenés abierto y pasale el archivo.`);
+    }
+  };
+
+  const generarPDF = async () => {
     if (!proveedor.telefono) {
       alert(`No hay un número de teléfono cargado para ${proveedor.nombre}`);
       return;
     }
     
-    // 1. Generamos el PDF
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.setTextColor(15, 23, 42); 
@@ -31,37 +42,48 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     doc.text(`Pedido a proveedor: ${proveedor.nombre}`, 14, 30);
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 14, 36);
 
+    // Mapeamos SOLO las cantidades y descripciones (SIN PRECIOS)
     const datosTabla = items.map(item => [
-      item.codigo_proveedor || item.codigo_interno,
-      item.descripcion,
       item.cantidad,
-      `$${item.costo.toFixed(2)}`,
-      `$${(item.costo * item.cantidad).toFixed(2)}`
+      item.codigo_proveedor || item.codigo_interno || '-',
+      item.descripcion
     ]);
 
     autoTable(doc, {
       startY: 45,
-      head: [['Código', 'Descripción', 'Cant.', 'Costo Unit.', 'Subtotal']],
+      head: [['Cant.', 'Código', 'Descripción']],
       body: datosTabla,
-      foot: [['', '', '', 'TOTAL:', `$${total.toFixed(2)}`]],
       theme: 'grid',
       headStyles: { fillColor: [37, 99, 235] }, 
-      footStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
     });
 
     const nombreArchivo = `Pedido_${proveedor.nombre.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
     doc.save(nombreArchivo);
-
-    // 2. Preparamos el mensaje
-    const mensaje = `Hola ${proveedor.nombre}, te envío adjunto en PDF el pedido de stock desde Ferretería Ruta 20. ¡Muchas gracias!`;
     
-    // 3. LA NUEVA MAGIA: Copiamos al portapapeles en vez de abrir pestañas nuevas
-    try {
-      await navigator.clipboard.writeText(mensaje);
-      alert(`✅ ¡Listo!\n\n1. El PDF se descargó en tu compu.\n2. El texto del mensaje se copió automáticamente.\n\nAndá a la pestaña de WhatsApp que ya tenés abierta, buscá a ${proveedor.nombre}, tocá Ctrl+V (o Pegar) y adjuntá el PDF.`);
-    } catch (err) {
-      alert(`✅ PDF descargado.\n\nPor favor, escribile a ${proveedor.nombre} por el WhatsApp que tenés abierto y pasale el archivo.`);
+    await copiarMensajeYAlertar('PDF');
+  };
+
+  const generarExcel = async () => {
+    if (!proveedor.telefono) {
+      alert(`No hay un número de teléfono cargado para ${proveedor.nombre}`);
+      return;
     }
+
+    // Armamos los datos JSON para Excel (SIN PRECIOS)
+    const datosExcel = items.map(item => ({
+      "Cantidad": item.cantidad,
+      "Código": item.codigo_proveedor || item.codigo_interno || '-',
+      "Descripción": item.descripcion
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Pedido");
+
+    const nombreArchivo = `Pedido_${proveedor.nombre.replace(/\s+/g, '_')}_${new Date().getTime()}.xlsx`;
+    XLSX.writeFile(workbook, nombreArchivo);
+
+    await copiarMensajeYAlertar('Excel');
   };
 
   return (
@@ -90,7 +112,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
         )}
       </div>
 
-      {/* LISTA DE ITEMS */}
+      {/* LISTA DE ITEMS (ACÁ SÍ SE VEN LOS PRECIOS) */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-900">
         {items.length === 0 ? (
           <div className="text-center text-slate-400 mt-10 text-xs font-medium">
@@ -140,27 +162,38 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
         )}
       </div>
 
-      {/* FOOTER Y BOTÓN ENVIAR */}
+      {/* FOOTER Y BOTONES DE DESCARGA */}
       <div className="p-4 border-t border-slate-700 bg-slate-900">
         <div className="flex justify-between items-end mb-3">
           <span className="text-xs font-bold text-slate-300">Total estim.:</span>
           <span className="text-lg font-bold text-white leading-none">${total.toFixed(2)}</span>
         </div>
         
-        <button 
-          onClick={generarPDFyWhatsApp}
-          disabled={items.length === 0}
-          className={`w-full py-2.5 rounded-md font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-            items.length > 0 
-              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md' 
-              : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-          }`}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          Descargar PDF y Copiar Mensaje
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={generarPDF}
+            disabled={items.length === 0}
+            className={`flex-1 py-2 rounded-md font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors ${
+              items.length > 0 
+                ? 'bg-red-600 hover:bg-red-500 text-white shadow-md' 
+                : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+            }`}
+          >
+            📄 Bajar PDF
+          </button>
+          
+          <button 
+            onClick={generarExcel}
+            disabled={items.length === 0}
+            className={`flex-1 py-2 rounded-md font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors ${
+              items.length > 0 
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md' 
+                : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+            }`}
+          >
+            📊 Bajar Excel
+          </button>
+        </div>
       </div>
     </aside>
   );

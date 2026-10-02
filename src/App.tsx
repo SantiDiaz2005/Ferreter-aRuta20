@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TablaProductos } from './components/TablaProductos';
 import { Carrito } from './components/Carrito';
+import { ImportadorMaestro } from './components/ImportadorMaestro'; // <-- IMPORTAMOS EL NUEVO BOTÓN MAESTRO
 import type { Proveedor, Producto, ItemCarrito } from './types';
 
 function App() {
@@ -188,6 +189,10 @@ function App() {
                 </svg>
                 Elegí un proveedor de la barra lateral para comenzar
               </div>
+
+              {/* ACÁ ENTRA EL NUEVO IMPORTADOR MAESTRO */}
+              <ImportadorMaestro />
+              
             </div>
           )}
         </section>
