@@ -77,6 +77,15 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+
+    // --- LA MAGIA DEL FORMATO ---
+    // wch = "Width in Characters" (Ancho en cantidad de letras)
+    worksheet['!cols'] = [
+      { wch: 10 }, // Columna A (Cantidad) - Bien ajustada para que el número no quede perdido
+      { wch: 15 }, // Columna B (Código) - Espacio normal
+      { wch: 50 }  // Columna C (Descripción) - Bien ancha para que se lea el producto completo
+    ];
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Pedido");
 
