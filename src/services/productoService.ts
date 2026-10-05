@@ -44,13 +44,31 @@ export const productoService = {
     if (error) throw error;
   },
 
+  // --- NUEVAS FUNCIONES PARA EDICIÓN MANUAL ---
+  async actualizarProducto(productoId: string, datos: { codigo_interno: string, descripcion: string, costo: number, precio_venta: number }): Promise<void> {
+    const { error } = await supabase
+      .from('productos')
+      .update(datos)
+      .eq('id', productoId);
+
+    if (error) throw error;
+  },
+
+  async eliminarProducto(productoId: string): Promise<void> {
+    const { error } = await supabase
+      .from('productos')
+      .delete()
+      .eq('id', productoId);
+
+    if (error) throw error;
+  },
+  // ---------------------------------------------
+
   // 2. GUARDAR EN TANDAS (Con filtro anti-duplicados del Excel)
   async sincronizarCatalogo(proveedorId: string, productosExcel: any[]): Promise<void> {
     const existentes = await this.listarPorProveedor(proveedorId);
     const mapaExistentes = new Map(existentes.map(p => [p.codigo_interno, p]));
 
-    // Usamos 'Map' en lugar de 'Array' para que, si un producto viene repetido en el Excel, 
-    // se pise a sí mismo y solo lo mandemos UNA vez a la base de datos.
     const paraInsertarMap = new Map();
     const paraActualizarMap = new Map();
 
@@ -79,11 +97,9 @@ export const productoService = {
       }
     }
 
-    // Convertimos los Mapas limpios y sin repetidos devuelta a listas normales
     const paraInsertar = Array.from(paraInsertarMap.values());
     const paraActualizar = Array.from(paraActualizarMap.values());
 
-    // Insertamos
     const TAMANO_TANDA = 1000;
     for (let i = 0; i < paraInsertar.length; i += TAMANO_TANDA) {
       const tanda = paraInsertar.slice(i, i + TAMANO_TANDA);
@@ -91,7 +107,6 @@ export const productoService = {
       if (error) throw error;
     }
 
-    // Actualizamos
     for (let i = 0; i < paraActualizar.length; i += TAMANO_TANDA) {
       const tanda = paraActualizar.slice(i, i + TAMANO_TANDA);
       const { error } = await supabase.from('productos').upsert(tanda);
