@@ -33,11 +33,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
   };
 
   const generarPDF = async () => {
-    if (!proveedor.telefono) {
-      alert(`No hay un número de teléfono cargado para ${proveedor.nombre}`);
-      return;
-    }
-    
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.setTextColor(15, 23, 42); 
@@ -70,11 +65,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
   };
 
   const generarExcel = async () => {
-    if (!proveedor.telefono) {
-      alert(`No hay un número de teléfono cargado para ${proveedor.nombre}`);
-      return;
-    }
-
     // Armamos los datos JSON para Excel en el orden exacto de la sugerencia
     const datosExcel = items.map(item => ({
       "Cantidad": item.cantidad,
