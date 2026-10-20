@@ -21,4 +21,5 @@ export interface Producto {
 
 export interface ItemCarrito extends Producto {
   cantidad: number;
+  observacion?: string; // <-- AGREGAR ESTA LÍNEA
 }

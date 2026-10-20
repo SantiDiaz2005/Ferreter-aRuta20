@@ -86,6 +86,19 @@ function App() {
     });
   };
 
+  // NUEVA FUNCIÓN: Para actualizar la observación de un ítem
+  const handleActualizarObservacion = (productoId: string, observacion: string) => {
+    if (!proveedorActual) return;
+    
+    setCarritos(prev => {
+      const carritoDelProveedor = prev[proveedorActual.id] || [];
+      const nuevoCarrito = carritoDelProveedor.map(i => 
+        i.id === productoId ? { ...i, observacion } : i
+      );
+      return { ...prev, [proveedorActual.id]: nuevoCarrito };
+    });
+  };
+
   // Obtenemos los items del proveedor seleccionado actualmente (o vacío si no hay nada)
   const itemsCarritoActual = proveedorActual ? (carritos[proveedorActual.id] || []) : [];
 
@@ -206,8 +219,8 @@ function App() {
           onRemoverItem={handleRemoverDelCarrito}
           onSumarItem={handleAgregarAlCarrito}
           onRestarItem={handleRestarDelCarrito}
-          // ACÁ SE CONECTA EL BOTÓN DEL TACHO DE BASURA
           onVaciarCarrito={() => setCarritos(prev => ({ ...prev, [proveedorActual.id]: [] }))} 
+          onActualizarObservacion={handleActualizarObservacion} // <-- ACÁ ENCHUFAMOS LA NUEVA FUNCIÓN
         />
       )}
     </div>

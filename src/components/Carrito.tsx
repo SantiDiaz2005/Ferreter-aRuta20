@@ -1,4 +1,5 @@
 // src/components/Carrito.tsx
+import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -11,12 +12,16 @@ interface CarritoProps {
   onSumarItem: (producto: Producto) => void;
   onRestarItem: (productoId: string) => void;
   onVaciarCarrito: () => void;
+  onActualizarObservacion: (productoId: string, observacion: string) => void;
 }
 
-export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestarItem, onVaciarCarrito }: CarritoProps) => {
+export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestarItem, onVaciarCarrito, onActualizarObservacion }: CarritoProps) => {
   const total = items.reduce((sum, item) => sum + (item.costo * item.cantidad), 0);
+  
+  // Estados para manejar el input de observación
+  const [editandoObsId, setEditandoObsId] = useState<string | null>(null);
+  const [obsTemp, setObsTemp] = useState('');
 
-  // Función unificada para copiar al portapapeles
   const copiarMensajeYAlertar = async (formato: 'PDF' | 'Excel') => {
     const mensaje = `Hola ${proveedor.nombre}, te envío adjunto en ${formato} el pedido de stock desde Ferretería Ruta 20. ¡Muchas gracias!`;
     try {
@@ -42,16 +47,17 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     doc.text(`Pedido a proveedor: ${proveedor.nombre}`, 14, 30);
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 14, 36);
 
-    // Mapeamos SOLO las cantidades y descripciones (SIN PRECIOS)
+    // Mapeamos los datos incluyendo la observación en el orden de la foto
     const datosTabla = items.map(item => [
       item.cantidad,
+      item.observacion || '',
       item.codigo_proveedor || item.codigo_interno || '-',
       item.descripcion
     ]);
 
     autoTable(doc, {
       startY: 45,
-      head: [['Cant.', 'Código', 'Descripción']],
+      head: [['Cant.', 'Observación', 'Código', 'Descripción']],
       body: datosTabla,
       theme: 'grid',
       headStyles: { fillColor: [37, 99, 235] }, 
@@ -69,21 +75,22 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
       return;
     }
 
-    // Armamos los datos JSON para Excel (SIN PRECIOS)
+    // Armamos los datos JSON para Excel en el orden exacto de la sugerencia
     const datosExcel = items.map(item => ({
       "Cantidad": item.cantidad,
+      "Observación": item.observacion || '',
       "Código": item.codigo_proveedor || item.codigo_interno || '-',
       "Descripción": item.descripcion
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(datosExcel);
-
-    // --- LA MAGIA DEL FORMATO ---
-    // wch = "Width in Characters" (Ancho en cantidad de letras)
+    
+    // Ajustamos los anchos de las 4 columnas
     worksheet['!cols'] = [
-      { wch: 10 }, // Columna A (Cantidad) - Bien ajustada para que el número no quede perdido
-      { wch: 15 }, // Columna B (Código) - Espacio normal
-      { wch: 50 }  // Columna C (Descripción) - Bien ancha para que se lea el producto completo
+      { wch: 10 }, // Columna A (Cantidad)
+      { wch: 18 }, // Columna B (Observación)
+      { wch: 15 }, // Columna C (Código)
+      { wch: 50 }  // Columna D (Descripción)
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -96,7 +103,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
   };
 
   return (
-    <aside className="w-72 bg-slate-900 border-l border-slate-700 flex flex-col h-screen text-slate-200 shadow-2xl">
+    <aside className="w-80 bg-slate-900 border-l border-slate-700 flex flex-col h-screen text-slate-200 shadow-2xl">
       
       {/* HEADER DEL CARRITO */}
       <div className="p-4 border-b border-slate-700 bg-slate-900 flex justify-between items-center">
@@ -107,7 +114,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
           Pedido a {proveedor.nombre}
         </h2>
 
-        {/* BOTÓN VACIAR CARRITO */}
         {items.length > 0 && (
           <button 
             onClick={onVaciarCarrito}
@@ -121,7 +127,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
         )}
       </div>
 
-      {/* LISTA DE ITEMS (ACÁ SÍ SE VEN LOS PRECIOS) */}
+      {/* LISTA DE ITEMS */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-900">
         {items.length === 0 ? (
           <div className="text-center text-slate-400 mt-10 text-xs font-medium">
@@ -140,11 +146,62 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                 </svg>
               </button>
               
-              <p className="text-xs font-bold text-white pr-5 leading-tight mb-2 truncate" title={item.descripcion}>
-                {item.descripcion}
-              </p>
+              <div className="pr-6 mb-2">
+                <p className="text-xs font-bold text-white leading-tight truncate" title={item.descripcion}>
+                  {item.descripcion}
+                </p>
+
+                {/* ZONA DE OBSERVACIONES (El lapicito) */}
+                {editandoObsId === item.id ? (
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={obsTemp}
+                      onChange={(e) => setObsTemp(e.target.value)}
+                      placeholder="Ej: 16A, luz cálida..."
+                      className="w-full bg-slate-950 border border-slate-600 rounded px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          onActualizarObservacion(item.id, obsTemp);
+                          setEditandoObsId(null);
+                        }
+                      }}
+                    />
+                    <button 
+                      onClick={() => {
+                        onActualizarObservacion(item.id, obsTemp);
+                        setEditandoObsId(null);
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white p-1 rounded"
+                      title="Guardar"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    {item.observacion && (
+                      <span className="text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded font-medium max-w-[150px] truncate" title={item.observacion}>
+                        Obs: {item.observacion}
+                      </span>
+                    )}
+                    <button 
+                      onClick={() => {
+                        setEditandoObsId(item.id);
+                        setObsTemp(item.observacion || '');
+                      }}
+                      className="text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors text-[10px] font-bold"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                      {item.observacion ? 'Editar' : 'Añadir obs.'}
+                    </button>
+                  </div>
+                )}
+              </div>
               
-              <div className="flex justify-between items-center">
+              {/* CONTROLES DE CANTIDAD */}
+              <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-700/50">
                 <div className="flex items-center gap-1.5 bg-slate-900 rounded border border-slate-600 overflow-hidden">
                   <button 
                     onClick={() => onRestarItem(item.id)}
@@ -171,7 +228,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
         )}
       </div>
 
-      {/* FOOTER Y BOTONES DE DESCARGA */}
+      {/* FOOTER */}
       <div className="p-4 border-t border-slate-700 bg-slate-900">
         <div className="flex justify-between items-end mb-3">
           <span className="text-xs font-bold text-slate-300">Total estim.:</span>
