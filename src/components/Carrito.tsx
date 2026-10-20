@@ -1,5 +1,5 @@
 // src/components/Carrito.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
