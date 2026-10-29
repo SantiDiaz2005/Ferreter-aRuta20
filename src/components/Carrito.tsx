@@ -137,6 +137,11 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
               </button>
               
               <div className="pr-6 mb-2">
+                {/* NUEVO: Código del producto */}
+                <span className="text-[10px] text-blue-400 font-mono block mb-0.5 uppercase tracking-wider font-bold">
+                  {item.codigo_proveedor || item.codigo_interno || 'S/C'}
+                </span>
+                
                 <p className="text-xs font-bold text-white leading-tight truncate" title={item.descripcion}>
                   {item.descripcion}
                 </p>
