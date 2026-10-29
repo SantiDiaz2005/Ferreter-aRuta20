@@ -18,7 +18,6 @@ interface CarritoProps {
 export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestarItem, onVaciarCarrito, onActualizarObservacion }: CarritoProps) => {
   const total = items.reduce((sum, item) => sum + (item.costo * item.cantidad), 0);
   
-  // Estados para manejar el input de observación
   const [editandoObsId, setEditandoObsId] = useState<string | null>(null);
   const [obsTemp, setObsTemp] = useState('');
 
@@ -42,7 +41,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     doc.text(`Pedido a proveedor: ${proveedor.nombre}`, 14, 30);
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 14, 36);
 
-    // Mapeamos los datos incluyendo la observación en el orden de la foto
     const datosTabla = items.map(item => [
       item.cantidad,
       item.observacion || '',
@@ -65,7 +63,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
   };
 
   const generarExcel = async () => {
-    // Armamos los datos JSON para Excel en el orden exacto de la sugerencia
     const datosExcel = items.map(item => ({
       "Cantidad": item.cantidad,
       "Observación": item.observacion || '',
@@ -75,12 +72,11 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
 
     const worksheet = XLSX.utils.json_to_sheet(datosExcel);
     
-    // Ajustamos los anchos de las 4 columnas
     worksheet['!cols'] = [
-      { wch: 10 }, // Columna A (Cantidad)
-      { wch: 18 }, // Columna B (Observación)
-      { wch: 15 }, // Columna C (Código)
-      { wch: 50 }  // Columna D (Descripción)
+      { wch: 10 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 50 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -93,9 +89,8 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
   };
 
   return (
-    <aside className="w-80 bg-slate-900 border-l border-slate-700 flex flex-col h-screen text-slate-200 shadow-2xl">
+    <aside className="w-[420px] bg-slate-900 border-l border-slate-700 flex flex-col h-screen text-slate-200 shadow-2xl">
       
-      {/* HEADER DEL CARRITO */}
       <div className="p-4 border-b border-slate-700 bg-slate-900 flex justify-between items-center">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
           <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,18 +112,17 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
         )}
       </div>
 
-      {/* LISTA DE ITEMS */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-900">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900">
         {items.length === 0 ? (
-          <div className="text-center text-slate-400 mt-10 text-xs font-medium">
+          <div className="text-center text-slate-400 mt-10 text-sm font-medium">
             El carrito está vacío.
           </div>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="bg-slate-800 p-2.5 rounded-md border border-slate-600 relative shadow-sm">
+            <div key={item.id} className="bg-slate-800 p-3 rounded-md border border-slate-600 relative shadow-sm">
               <button 
                 onClick={() => onRemoverItem(item.id)}
-                className="absolute top-1.5 right-1.5 text-slate-400 hover:text-red-400 w-5 h-5 flex items-center justify-center rounded transition-colors"
+                className="absolute top-2 right-2 text-slate-400 hover:text-red-400 w-6 h-6 flex items-center justify-center rounded transition-colors"
                 title="Eliminar ítem"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,17 +130,15 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                 </svg>
               </button>
               
-              <div className="pr-6 mb-2">
-                {/* NUEVO: Código del producto */}
-                <span className="text-[10px] text-blue-400 font-mono block mb-0.5 uppercase tracking-wider font-bold">
+              <div className="pr-8 mb-2">
+                <span className="text-xs text-blue-400 font-mono block mb-1 uppercase tracking-wider font-bold">
                   {item.codigo_proveedor || item.codigo_interno || 'S/C'}
                 </span>
                 
-                <p className="text-xs font-bold text-white leading-tight truncate" title={item.descripcion}>
+                <p className="text-sm font-bold text-white leading-tight truncate" title={item.descripcion}>
                   {item.descripcion}
                 </p>
 
-                {/* ZONA DE OBSERVACIONES (El lapicito) */}
                 {editandoObsId === item.id ? (
                   <div className="mt-2 flex items-center gap-1.5">
                     <input
@@ -154,7 +146,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                       value={obsTemp}
                       onChange={(e) => setObsTemp(e.target.value)}
                       placeholder="Ej: 16A, luz cálida..."
-                      className="w-full bg-slate-950 border border-slate-600 rounded px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-slate-950 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-blue-500"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -171,13 +163,13 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                       className="bg-emerald-600 hover:bg-emerald-500 text-white p-1 rounded"
                       title="Guardar"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                     </button>
                   </div>
                 ) : (
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     {item.observacion && (
-                      <span className="text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded font-medium max-w-[150px] truncate" title={item.observacion}>
+                      <span className="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded font-medium max-w-[200px] truncate" title={item.observacion}>
                         Obs: {item.observacion}
                       </span>
                     )}
@@ -186,35 +178,34 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                         setEditandoObsId(item.id);
                         setObsTemp(item.observacion || '');
                       }}
-                      className="text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors text-[10px] font-bold"
+                      className="text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors text-xs font-bold"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                       {item.observacion ? 'Editar' : 'Añadir obs.'}
                     </button>
                   </div>
                 )}
               </div>
               
-              {/* CONTROLES DE CANTIDAD */}
-              <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-700/50">
-                <div className="flex items-center gap-1.5 bg-slate-900 rounded border border-slate-600 overflow-hidden">
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-700/50">
+                <div className="flex items-center gap-2 bg-slate-900 rounded border border-slate-600 overflow-hidden">
                   <button 
                     onClick={() => onRestarItem(item.id)}
-                    className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-bold"
+                    className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-base font-bold"
                   >
                     -
                   </button>
-                  <span className="text-xs font-bold text-white w-4 text-center">
+                  <span className="text-sm font-bold text-white w-5 text-center">
                     {item.cantidad}
                   </span>
                   <button 
                     onClick={() => onSumarItem(item as Producto)}
-                    className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-sm font-bold"
+                    className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-base font-bold"
                   >
                     +
                   </button>
                 </div>
-                <span className="text-emerald-400 font-bold text-xs">
+                <span className="text-emerald-400 font-bold text-sm">
                   ${(item.costo * item.cantidad).toFixed(2)}
                 </span>
               </div>
@@ -223,18 +214,17 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
         )}
       </div>
 
-      {/* FOOTER */}
       <div className="p-4 border-t border-slate-700 bg-slate-900">
-        <div className="flex justify-between items-end mb-3">
-          <span className="text-xs font-bold text-slate-300">Total estim.:</span>
-          <span className="text-lg font-bold text-white leading-none">${total.toFixed(2)}</span>
+        <div className="flex justify-between items-end mb-4">
+          <span className="text-sm font-bold text-slate-300">Total estim.:</span>
+          <span className="text-xl font-bold text-white leading-none">${total.toFixed(2)}</span>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button 
             onClick={generarPDF}
             disabled={items.length === 0}
-            className={`flex-1 py-2 rounded-md font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors ${
+            className={`flex-1 py-2.5 rounded-md font-bold text-sm flex flex-col items-center justify-center gap-1 transition-colors ${
               items.length > 0 
                 ? 'bg-red-600 hover:bg-red-500 text-white shadow-md' 
                 : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
@@ -246,7 +236,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
           <button 
             onClick={generarExcel}
             disabled={items.length === 0}
-            className={`flex-1 py-2 rounded-md font-bold text-xs flex flex-col items-center justify-center gap-1 transition-colors ${
+            className={`flex-1 py-2.5 rounded-md font-bold text-sm flex flex-col items-center justify-center gap-1 transition-colors ${
               items.length > 0 
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md' 
                 : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
