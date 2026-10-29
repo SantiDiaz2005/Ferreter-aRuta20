@@ -179,15 +179,17 @@ export const TablaProductos = ({ proveedor, onAgregarAlCarrito }: TablaProductos
 
       {productosFiltrados.length > 0 ? (
         <div className="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
-          <table className="w-full text-left text-xs text-slate-200">
+          {/* NUEVO: table-fixed para forzar el respeto de los porcentajes */}
+          <table className="w-full text-left text-xs text-slate-200 table-fixed">
             <thead className="bg-slate-800 uppercase text-slate-300 border-b border-slate-700 text-[10px]">
               <tr>
-                <th className="px-4 py-3 font-bold w-[15%]">Código</th>
-                <th className="px-4 py-3 font-bold w-[40%]">Descripción</th>
-                <th className="px-4 py-3 font-bold w-[12%]">Costo</th>
-                <th className="px-4 py-3 font-bold w-[10%]">Mult.</th>
-                <th className="px-4 py-3 font-bold w-[10%]">Precio</th>
-                <th className="px-4 py-3 font-bold text-center w-[13%]">Acciones</th>
+                {/* NUEVO: Ajuste de anchos y padding */}
+                <th className="px-3 py-3 font-bold w-[15%]">Código</th>
+                <th className="px-3 py-3 font-bold w-[34%]">Descripción</th>
+                <th className="px-2 py-3 font-bold w-[12%]">Costo</th>
+                <th className="px-2 py-3 font-bold w-[11%]">Mult.</th>
+                <th className="px-2 py-3 font-bold w-[12%]">Precio</th>
+                <th className="px-2 py-3 font-bold text-center w-[16%]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -204,7 +206,7 @@ export const TablaProductos = ({ proveedor, onAgregarAlCarrito }: TablaProductos
                     <td className="px-2 py-2">
                       <input type="number" step="0.01" value={formEdicion.costo} onChange={e => setFormEdicion({...formEdicion, costo: e.target.value})} className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white focus:outline-none focus:border-amber-500" />
                     </td>
-                    <td className="px-4 py-2" colSpan={2}>
+                    <td className="px-2 py-2" colSpan={2}>
                       <span className="text-[10px] text-amber-400 font-bold block mt-1">Editando...</span>
                     </td>
                     <td className="px-2 py-2">
@@ -221,10 +223,11 @@ export const TablaProductos = ({ proveedor, onAgregarAlCarrito }: TablaProductos
                 ) : (
                   /* FILA NORMAL */
                   <tr key={prod.id} className="hover:bg-slate-800 transition-colors">
-                    <td className="px-4 py-2 font-mono text-slate-300">{prod.codigo_proveedor || prod.codigo_interno}</td>
-                    <td className="px-4 py-2 font-medium text-white truncate max-w-[250px]" title={prod.descripcion}>{prod.descripcion}</td>
-                    <td className="px-4 py-2 text-slate-300">${prod.costo.toFixed(2)}</td>
-                    <td className="px-4 py-2">
+                    {/* NUEVO: truncate en las celdas para que no rompan la tabla y px más chicos */}
+                    <td className="px-3 py-2 font-mono text-slate-300 truncate" title={prod.codigo_proveedor || prod.codigo_interno}>{prod.codigo_proveedor || prod.codigo_interno}</td>
+                    <td className="px-3 py-2 font-medium text-white truncate" title={prod.descripcion}>{prod.descripcion}</td>
+                    <td className="px-2 py-2 text-slate-300">${prod.costo.toFixed(2)}</td>
+                    <td className="px-2 py-2">
                       <div className="flex items-center gap-1">
                         <span className="text-slate-400 font-bold">x</span>
                         <input
@@ -236,19 +239,16 @@ export const TablaProductos = ({ proveedor, onAgregarAlCarrito }: TablaProductos
                         />
                       </div>
                     </td>
-                    <td className="px-4 py-2 text-emerald-400 font-bold text-sm">${prod.precio_venta.toFixed(2)}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-2 text-emerald-400 font-bold text-sm">${prod.precio_venta.toFixed(2)}</td>
+                    <td className="px-2 py-2">
                       <div className="flex gap-1 justify-center">
-                        {/* Botón Carrito */}
-                        <button onClick={() => onAgregarAlCarrito(prod)} className="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded shadow-sm" title="Añadir al pedido">
+                        <button onClick={() => onAgregarAlCarrito(prod)} className="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded shadow-sm flex-shrink-0" title="Añadir al pedido">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </button>
-                        {/* Botón Editar */}
-                        <button onClick={() => handleIniciarEdicion(prod)} className="bg-amber-600 hover:bg-amber-500 text-white p-1.5 rounded shadow-sm" title="Editar producto">
+                        <button onClick={() => handleIniciarEdicion(prod)} className="bg-amber-600 hover:bg-amber-500 text-white p-1.5 rounded shadow-sm flex-shrink-0" title="Editar producto">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         </button>
-                        {/* Botón Borrar */}
-                        <button onClick={() => handleEliminar(prod.id, prod.descripcion)} className="bg-red-600 hover:bg-red-500 text-white p-1.5 rounded shadow-sm" title="Eliminar producto">
+                        <button onClick={() => handleEliminar(prod.id, prod.descripcion)} className="bg-red-600 hover:bg-red-500 text-white p-1.5 rounded shadow-sm flex-shrink-0" title="Eliminar producto">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                       </div>
