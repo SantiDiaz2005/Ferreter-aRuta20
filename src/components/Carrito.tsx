@@ -60,6 +60,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     doc.save(nombreArchivo);
     
     await copiarMensajeYAlertar('PDF');
+    onVaciarCarrito(); // <-- SE VACÍA EL CARRITO AL TERMINAR
   };
 
   const generarExcel = async () => {
@@ -86,6 +87,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     XLSX.writeFile(workbook, nombreArchivo);
 
     await copiarMensajeYAlertar('Excel');
+    onVaciarCarrito(); // <-- SE VACÍA EL CARRITO AL TERMINAR
   };
 
   return (
@@ -131,7 +133,8 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
               </button>
               
               <div className="pr-8 mb-2">
-                <span className="text-xs text-blue-400 font-mono block mb-1 uppercase tracking-wider font-bold">
+                {/* ACÁ ESTÁ EL CÓDIGO EN text-sm */}
+                <span className="text-sm text-blue-400 font-mono block mb-1 uppercase tracking-wider font-bold">
                   {item.codigo_proveedor || item.codigo_interno || 'S/C'}
                 </span>
                 
@@ -146,7 +149,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                       value={obsTemp}
                       onChange={(e) => setObsTemp(e.target.value)}
                       placeholder="Ej: 16A, luz cálida..."
-                      className="w-full bg-slate-950 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-slate-950 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-blue-500"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -173,14 +176,15 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                         Obs: {item.observacion}
                       </span>
                     )}
+                    {/* ACÁ ESTÁ EL BOTÓN AÑADIR OBS EN AMARILLO Y text-sm */}
                     <button 
                       onClick={() => {
                         setEditandoObsId(item.id);
                         setObsTemp(item.observacion || '');
                       }}
-                      className="text-slate-400 hover:text-amber-400 flex items-center gap-1 transition-colors text-xs font-bold"
+                      className="text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors text-sm font-bold"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                       {item.observacion ? 'Editar' : 'Añadir obs.'}
                     </button>
                   </div>
