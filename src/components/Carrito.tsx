@@ -33,13 +33,44 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
 
   const generarPDF = async () => {
     const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.setTextColor(15, 23, 42); 
-    doc.text('Ferretería Ruta 20', 14, 22);
+    
+    // Función para cargar la imagen del logo desde la carpeta public
+    const cargarImagen = (url: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+      });
+    };
+
+    try {
+      // INTENTO A: Busca el logo.png (tiene que estar en la carpeta public)
+      const logo = await cargarImagen('/logo.png');
+      doc.addImage(logo, 'PNG', 14, 10, 48, 16); 
+    } catch (error) {
+      // INTENTO B: Si no está la imagen, dibuja el escudo a mano
+      doc.setFillColor(220, 38, 38);
+      doc.roundedRect(14, 12, 18, 18, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("RUTA", 23, 18, { align: "center" });
+      doc.setFontSize(16);
+      doc.text("20", 23, 26, { align: "center" });
+      doc.setFontSize(22);
+      doc.setTextColor(15, 23, 42); 
+      doc.text('Ferretería', 36, 24);
+      doc.setTextColor(220, 38, 38); 
+      doc.text('Ruta 20', 74, 24);
+    }
+    
+    // Subtítulos del PDF
     doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 116, 139);
-    doc.text(`Pedido a proveedor: ${proveedor.nombre}`, 14, 30);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 14, 36);
+    doc.text(`Pedido a proveedor: ${proveedor.nombre}`, 14, 38);
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 14, 44);
 
     const datosTabla = items.map(item => [
       item.cantidad,
@@ -49,7 +80,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     ]);
 
     autoTable(doc, {
-      startY: 45,
+      startY: 52, // Tabla corrida hacia abajo para que entre el membrete
       head: [['Cant.', 'Observación', 'Código', 'Descripción']],
       body: datosTabla,
       theme: 'grid',
@@ -60,7 +91,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     doc.save(nombreArchivo);
     
     await copiarMensajeYAlertar('PDF');
-    onVaciarCarrito(); // <-- SE VACÍA EL CARRITO AL TERMINAR
+    onVaciarCarrito(); // El carrito se limpia
   };
 
   const generarExcel = async () => {
@@ -71,7 +102,14 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
       "Descripción": item.descripcion
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+    const worksheet = XLSX.utils.json_to_sheet([]); 
+
+    // Títulos grandes para el Excel
+    XLSX.utils.sheet_add_aoa(worksheet, [["FERRETERÍA RUTA 20"]], { origin: "A1" });
+    XLSX.utils.sheet_add_aoa(worksheet, [[`Pedido a proveedor: ${proveedor.nombre}`]], { origin: "A2" });
+    XLSX.utils.sheet_add_aoa(worksheet, [[`Fecha: ${new Date().toLocaleDateString('es-AR')}`]], { origin: "A3" });
+    
+    XLSX.utils.sheet_add_json(worksheet, datosExcel, { origin: "A5", skipHeader: false });
     
     worksheet['!cols'] = [
       { wch: 10 },
@@ -87,7 +125,7 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
     XLSX.writeFile(workbook, nombreArchivo);
 
     await copiarMensajeYAlertar('Excel');
-    onVaciarCarrito(); // <-- SE VACÍA EL CARRITO AL TERMINAR
+    onVaciarCarrito(); // El carrito se limpia
   };
 
   return (
@@ -133,7 +171,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
               </button>
               
               <div className="pr-8 mb-2">
-                {/* ACÁ ESTÁ EL CÓDIGO EN text-sm */}
                 <span className="text-sm text-blue-400 font-mono block mb-1 uppercase tracking-wider font-bold">
                   {item.codigo_proveedor || item.codigo_interno || 'S/C'}
                 </span>
@@ -176,7 +213,6 @@ export const Carrito = ({ proveedor, items, onRemoverItem, onSumarItem, onRestar
                         Obs: {item.observacion}
                       </span>
                     )}
-                    {/* ACÁ ESTÁ EL BOTÓN AÑADIR OBS EN AMARILLO Y text-sm */}
                     <button 
                       onClick={() => {
                         setEditandoObsId(item.id);
